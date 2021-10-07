@@ -1,0 +1,96 @@
+name: ci
+on:
+  - push
+
+jobs:
+  build_win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - uses: actions/cache@v2
+        with:
+          path: |
+            .venv
+            .cache
+            env
+          key: ${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+            ${{ runner.os }}-
+      - name: Install dependencies
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_CACHE_DIR: .cache
+        run: |
+          python -m venv env
+          ./env/Scripts/pip install --cache-dir .cache poetry
+          ./env/Scripts/poetry config --list
+          ./env/Scripts/poetry install
+      - name: Build .exe
+        run: ./env/Scripts/poetry run pyinstaller -w -y --clean --log-level WARN ./blackbox_fetch/main.py -F --name blackbox-fetch
+      - uses: actions/upload-artifact@v2
+        # Upload only on specific branches
+        if: endsWith(github.ref, 'master') || endsWith(github.ref, 'dev')
+        with:
+          name: blackbox_fetch_exe
+          path: dist/blackbox-fetch.exe
+
+  release:
+    needs: build_win
+    runs-on: windows-latest
+    if: endsWith(github.ref, 'master') || endsWith(github.ref, 'dev')
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - uses: actions/cache@v2
+        with:
+          path: |
+            .venv
+            .cache
+            env
+          key: ${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+            ${{ runner.os }}-
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: blackbox_fetch_exe
+
+      - name: Bump version for master or dev branch
+        id: version
+        run: |
+          $branch = git rev-parse --abbrev-ref HEAD
+
+          if ($branch -eq "dev"){
+            ./env/Scripts/poetry version patch
+          }
+
+          if ($branch -eq "master") {
+            ./env/Scripts/poetry version minor
+          }
+
+          $version = ./env/Scripts/poetry version -s
+
+          git config --global user.name 'Github Action'
+          git config --global user.email 'github-action@users.noreply.github.com'
+          git commit -am "Auto bump version to $version"
+          git tag v$version
+          git push --tags
+
+          echo "::set-output name=version::v$version"
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: "Release body"
+          prerelease: true
+          files: blackbox-fetch.exe
+          name: "blackbox-fetch ${{ steps.version.outputs.version }}"
+          tag_name: "${{ steps.version.outputs.version }}"
+          fail_on_unmatched_files: true
