@@ -2,7 +2,7 @@
 name = "blackbox-fetch"
 version = "0.1.1"
 description = "Quickly download blackbox logs and erase"
-authors = ["Your Name <you@example.com>"]
+authors = ["Alexander Gorokhov <sashgorokhov@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
