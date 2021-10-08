@@ -99,6 +99,7 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           tags: true
+          branch: ${{ github.ref }}
 
       - name: Release
         uses: softprops/action-gh-release@v1
