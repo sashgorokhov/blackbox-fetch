@@ -64,7 +64,7 @@ jobs:
 
       - name: Download git-chglog
         run: |
-          wget "https://github.com/git-chglog/git-chglog/releases/download/v0.15.0/git-chglog_0.15.0_windows_amd64.zip" -outfile "git-chglog.zip"
+          Invoke-WebRequest -Uri "https://github.com/git-chglog/git-chglog/releases/download/v0.15.0/git-chglog_0.15.0_windows_amd64.zip" -OutFile "git-chglog.zip"
           Expand-Archive -Path git-chglog.zip
 
       - name: Bump version for master or dev branch
