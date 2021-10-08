@@ -62,35 +62,50 @@ jobs:
         with:
           name: blackbox_fetch_exe
 
+      - name: Download git-chglog
+        run: |
+          wget "https://github.com/git-chglog/git-chglog/releases/download/v0.15.0/git-chglog_0.15.0_windows_amd64.zip" -outfile "git-chglog.zip"
+          Expand-Archive -Path git-chglog.zip
+
       - name: Bump version for master or dev branch
         id: version
         run: |
           $branch = git rev-parse --abbrev-ref HEAD
 
           if ($branch -eq "dev"){
+            echo Bumping patch version
             ./env/Scripts/poetry version patch
           }
 
           if ($branch -eq "master") {
+            echo Bumping minor version
             ./env/Scripts/poetry version minor
           }
 
           $version = ./env/Scripts/poetry version -s
+          $tag = "v$version"
 
           git config --global user.name 'Github Action'
           git config --global user.email 'github-action@users.noreply.github.com'
           git commit -am "Auto bump version to $version"
-          git tag v$version
-          git push --tags
+          git tag $tag
 
-          echo "::set-output name=version::v$version"
+          git-chglog/git-chglog.exe -c .github/config.yml --output CHANGELOG.md ..$tag
+
+          echo "::set-output name=version::$version"
+          echo "::set-output name=tag::$tag"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          tags: true
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          body: "Release body"
+          body_path: CHANGELOG.md
           prerelease: true
           files: blackbox-fetch.exe
           name: "blackbox-fetch ${{ steps.version.outputs.version }}"
-          tag_name: "${{ steps.version.outputs.version }}"
+          tag_name: "${{ steps.version.outputs.tag }}"
           fail_on_unmatched_files: true
