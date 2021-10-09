@@ -1,15 +1,14 @@
 import contextlib
 import logging
 import shutil
-import sys
 import time
 from pathlib import Path
+from typing import ContextManager
 
 from PyQt6.QtCore import QObject, QThreadPool, pyqtSignal
 from PyQt6.QtWidgets import QMainWindow, QApplication, QFileDialog
 
-from blackbox_fetch import logs, io, config
-from blackbox_fetch.board import Board
+from blackbox_fetch import logs, io, config, msp
 from blackbox_fetch.ui.main_window.form import Ui_MainWindow
 
 logger = logging.getLogger(__name__)
@@ -29,6 +28,8 @@ class Background(QObject):
         self.output_directory = config.BASE_DIR
         self._progress = 0
 
+        self.fs = io.Filesystem.get_filesystem()
+
         super(Background, self).__init__()
 
     def checkstop(self):
@@ -44,6 +45,9 @@ class Background(QObject):
             return
         except:
             logger.exception('Background run failed')
+            self.set_progress.emit(100)
+            self.set_status.emit('Unexpected error occured')
+
             if not self.stop:
                 self.finished.emit()
 
@@ -55,25 +59,25 @@ class Background(QObject):
         self.set_status.emit('Copying blackbox files')
         self.copy_blackbox_files()
         self.set_progress.emit(80)
-        if sys.platform == 'win32':
-            import winsound
-            winsound.Beep(1500, 150)
-            winsound.Beep(1500, 150)
-            winsound.Beep(1500, 150)
         self.set_status.emit('Please reconnect device usb')
         self.erase_blackbox()
         self.set_status.emit('Job done, happy debugging!')
         self.set_progress.emit(100)
 
     def reboot_into_storage(self):
-        with self.connect_betafl_board() as board:
-            board.show_board_info()
-            board.show_blackbox_stats()
-            board.reboot(2)
-            time.sleep(2)
+        with self.connect_blackbox_board() as board:
+            r: msp.MSP_DATAFLASH_SUMMARY = board.send_command(msp.MSP_DATAFLASH_SUMMARY)
+            logger.info(f'Blackbox used: {r.used_size}/{r.total_size} {round(r.used_size / r.total_size, 1) * 100}%')
+            board.send_command(msp.MSP_REBOOT_MSD)
 
     def copy_blackbox_files(self):
-        paths = list(io.iter_blackbox_paths())
+        paths = self.fs.get_blackbox_files()
+        while not self.stop and not paths:
+            time.sleep(0.1)
+            paths = self.fs.get_blackbox_files()
+
+        self.checkstop()
+
         logger.debug(f'Found {len(paths)} blackbox files: {paths}')
 
         if not paths:
@@ -96,52 +100,28 @@ class Background(QObject):
 
     def erase_blackbox(self):
         logger.debug('Waiting for device to erase blackbox')
-        with self.connect_betafl_board() as board:
+        with self.connect_blackbox_board() as board:
             self.set_status.emit('Erasing blackbox')
-            board.erase_dataflash()
-            self.wait_dataflash_ready(board)
+            board.send_command(msp.MSP_DATAFLASH_ERASE)
 
-    def wait_dataflash_ready(self, board: Board):
-        while not self.stop and not board.is_dataflash_ready():
-            time.sleep(1)
+            while not self.stop and not board.send_command(msp.MSP_DATAFLASH_SUMMARY).ready:
+                time.sleep(1)
 
-        self.checkstop()
-
-    def wait_for_devices(self):
-        while not self.stop:
-            devices = io.list_devices()
-            if devices:
-                return devices
-            else:
-                time.sleep(0.1)
-
-        self.checkstop()
+            self.checkstop()
 
     @contextlib.contextmanager
-    def connect_betafl_board(self):
-        while not self.stop:
-            devices = self.wait_for_devices()
-            logger.info('Available devices: %s', devices)
+    def connect_blackbox_board(self) -> ContextManager[msp.SerialMSP]:
+        device = self.fs.get_msp_device()
 
-            for device in devices:
-                try:
-                    logger.debug('Trying to connect to %s', device)
-                    board = Board(device=device)
-                    with board:
-                        if board:
-                            logger.info('Connected to %s', device)
-                            yield board
-                            return
-                        else:
-                            logger.info('Failed to connect %s', device)
-                            continue
-                except:
-                    logger.exception('Error connecting to %s', device)
-                    continue
-
+        while not self.stop and not device:
             time.sleep(0.1)
+            device = self.fs.get_msp_device()
 
         self.checkstop()
+        logger.info(f'Connected to {device}')
+
+        with msp.SerialMSP(port=device) as s:
+            yield s
 
 
 class MainWindow(Ui_MainWindow, QMainWindow):
@@ -157,14 +137,14 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         handler.setLevel(logging.INFO)
         package_logger.addHandler(handler)
 
+        self.output_folder_edit.setText(str(config.BASE_DIR))
+        self.output_folder_button.clicked.connect(self.output_folder_edit_clicked)
+
         self._background_task = Background()
         self._background_task.set_status.connect(self.status_label.setText)
         self._background_task.set_progress.connect(self.progressBar.setValue)
         self._background_task.finished.connect(self.close)
         QThreadPool.globalInstance().start(self._background_task.entrypoint)
-
-        self.output_folder_edit.setText(str(config.BASE_DIR))
-        self.output_folder_button.clicked.connect(self.output_folder_edit_clicked)
 
     def output_folder_edit_clicked(self):
         directory = QFileDialog.getExistingDirectory(
@@ -181,4 +161,4 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self._background_task.stop = True
         logger.info('Waiting for background run to stop')
         QThreadPool.globalInstance().waitForDone()
-        self._app.quit()
+        self.app.quit()

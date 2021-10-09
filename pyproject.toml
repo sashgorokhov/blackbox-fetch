@@ -8,7 +8,7 @@ authors = ["Alexander Gorokhov <sashgorokhov@gmail.com>"]
 python = "^3.7"
 PyQt6 = "^6.2.0"
 pyserial = "^3.5"
-yamspy = "^0.3.3"
+pywin32 = {version = "^301", platform = "windows"}
 
 [tool.poetry.dev-dependencies]
 pyinstaller = "^4.5.1"
