@@ -37,13 +37,12 @@ jobs:
           POETRY_VIRTUALENVS_IN_PROJECT: "true"
           POETRY_CACHE_DIR: .cache
         run: |
-          mkdir -p .cache
-          ls .cache
           if (-not(Test-Path -Path .cache/upx.exe -PathType Leaf)) {
             echo "Download UPX"
             Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v3.96/upx-3.96-win64.zip" -OutFile "upx.zip"
             Expand-Archive -Path upx.zip
             cp upx/upx-3.96-win64/upx.exe .cache/
+            ls .cache/
           }
 
           python -m venv env
