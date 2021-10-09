@@ -1,0 +1,14 @@
+
+name: Autorelease
+on:
+  workflow_dispatch:
+    branches:
+      - master
+      - dev
+
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/workflows/build.yml
