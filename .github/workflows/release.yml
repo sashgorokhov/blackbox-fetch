@@ -1,10 +1,7 @@
 
 name: Autorelease
 on:
-  workflow_dispatch:
-    branches:
-      - master
-      - dev
+  - push
 
 
 jobs:
