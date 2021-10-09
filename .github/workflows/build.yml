@@ -82,13 +82,12 @@ jobs:
           POETRY_VIRTUALENVS_IN_PROJECT: "true"
           POETRY_CACHE_DIR: .cache
         run: |
-          mkdir -p ./cache
-          ls .cache
           if [ ! -f ./cache/upx ]; then
             echo "Download UPX"
             wget -O upx.tar.xz https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
             tar -xvf upx.tar.xz
             cp upx-3.96-amd64_linux/upx ./cache/
+            ls .cache/
           fi
           python -m venv env
           ./env/bin/pip install --cache-dir .cache poetry
