@@ -33,5 +33,7 @@ jobs:
           ./env/bin/pip install --cache-dir .cache poetry
           ./env/bin/poetry install
 
+          ./env/bin/poetry show
+
       - name: pylint
-        run: ./env/bin/poetry run pylint --rcfile ./.pylintrc blackbox_fetch
+        run: ./env/bin/poetry run pylint --rcfile ./.pylintrc ./blackbox_fetch
