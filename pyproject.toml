@@ -5,7 +5,7 @@ description = "Quickly download blackbox logs and erase"
 authors = ["Alexander Gorokhov <sashgorokhov@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.9"
 PyQt6 = "^6.2.0"
 pyserial = "^3.5"
 pywin32 = {version = "^301", platform = "windows"}
