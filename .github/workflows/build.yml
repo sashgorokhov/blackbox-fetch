@@ -41,7 +41,7 @@ jobs:
           }
 
           python -m venv env
-          ./env/Scripts/pip install --cache-dir .cache poetry
+          ./env/Scripts/pip install --cache-dir .cache poetry pywin32
           ./env/Scripts/poetry install
       - name: Build .exe
         run: |
