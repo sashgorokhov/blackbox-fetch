@@ -41,11 +41,12 @@ jobs:
           }
 
           python -m venv env
-          ./env/Scripts/pip install --cache-dir .cache poetry pywin32
+          ./env/Scripts/pip install --cache-dir .cache poetry
           ./env/Scripts/poetry install
+          ./env/Scripts/poetry run pip install pywin32
       - name: Build .exe
         run: |
-          ./env/Scripts/poetry run pyinstaller -w -y --clean --log-level WARN -F --name blackbox-fetch --upx-dir .cache/ --hidden-import win32api ./blackbox_fetch/main.py
+          ./env/Scripts/poetry run pyinstaller -w -y --clean --log-level WARN -F --name blackbox-fetch --upx-dir .cache/ --hidden-import pywintypes ./blackbox_fetch/main.py
           ls dist
           mv dist/blackbox-fetch.exe dist/blackbox-fetch_windows_amd64.exe
       - uses: actions/upload-artifact@v2

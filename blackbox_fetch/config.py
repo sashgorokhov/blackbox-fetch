@@ -2,6 +2,10 @@ import os
 import sys
 from pathlib import Path
 
+
+IS_WINDOWS = sys.platform == 'win32'
+IS_LINUX = sys.platform == 'linux'
+
 APP_NAME: str = 'blackbox_fetch'
 
 EXECUTABLE_PATH: Path = Path(sys.argv[0]).absolute()
@@ -13,9 +17,9 @@ if FROZEN:
 else:
     BASE_DIR = Path(__file__).parents[1]
 
-if sys.platform == 'win32':
+if IS_WINDOWS:
     LOCALAPPDATA_DIR: Path = Path(os.environ.get('LOCALAPPDATA', BASE_DIR / 'LOCALAPPDATA'))
-elif sys.platform == 'linux':
+elif IS_LINUX:
     LOCALAPPDATA_DIR: Path = (Path('~/.config') / APP_NAME).expanduser()
 else:
     raise NotImplementedError('Unsupported platform')

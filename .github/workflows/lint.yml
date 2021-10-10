@@ -30,8 +30,9 @@ jobs:
           POETRY_CACHE_DIR: .cache
         run: |
           python -m venv env
-          ./env/Scripts/pip install --cache-dir .cache poetry
+          ./env/Scripts/pip install --cache-dir .cache poetry pywin32
           ./env/Scripts/poetry install
+          ./env/Scripts/poetry run pip install pywin32
 
           ./env/Scripts/poetry show
 

@@ -1,12 +1,16 @@
 import abc
 import logging
 import string
-import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 import serial.tools.list_ports
-from blackbox_fetch import msp
+from blackbox_fetch import msp, config
+
+
+if config.IS_WINDOWS:
+    import win32api  # pylint: disable=import-error
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +43,7 @@ class Filesystem(metaclass=abc.ABCMeta):
 
     @classmethod
     def get_filesystem(cls) -> 'Filesystem':
-        if sys.platform == 'win32':
+        if config.IS_WINDOWS:
             return FilesystemWindows()
         raise NotImplementedError()
 
@@ -70,9 +74,6 @@ class FilesystemWindows(Filesystem):
 
     @staticmethod
     def get_blackbox_drive() -> Optional[Path]:
-        # platform-specific import
-        import win32api  # pylint: disable=import-outside-toplevel,import-error
-
         drives = list(filter(lambda p: p.exists(), (Path(f'{letter}:/') for letter in string.ascii_uppercase)))
         drive_labels: List[Tuple[Path, str]] = [(drive, str(win32api.GetVolumeInformation(str(drive))[0])) for drive in drives]
 
