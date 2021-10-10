@@ -1,0 +1,37 @@
+
+name: Lint
+
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - uses: actions/cache@v2
+        with:
+          path: |
+            .venv
+            .cache
+            env
+          key: v2-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            v2-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+            v2-${{ runner.os }}-
+      - name: Install dependencies
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_CACHE_DIR: .cache
+        run: |
+          python -m venv env
+          ./env/bin/pip install --cache-dir .cache poetry
+          ./env/bin/poetry install
+
+      - name: pylint
+        run: ./env/bin/poetry run pylint

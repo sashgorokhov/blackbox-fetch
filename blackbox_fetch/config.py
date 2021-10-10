@@ -13,8 +13,13 @@ if FROZEN:
 else:
     BASE_DIR = Path(__file__).parents[1]
 
-# TODO: Handle linux and mac
-LOCALAPPDATA_DIR: Path = Path(os.environ.get('LOCALAPPDATA', BASE_DIR / 'LOCALAPPDATA'))
+if sys.platform == 'win32':
+    LOCALAPPDATA_DIR: Path = Path(os.environ.get('LOCALAPPDATA', BASE_DIR / 'LOCALAPPDATA'))
+elif sys.platform == 'linux':
+    LOCALAPPDATA_DIR: Path = (Path('~/.config') / APP_NAME).expanduser()
+else:
+    raise NotImplementedError('Unsupported platform')
+
 APP_DATA_DIR = LOCALAPPDATA_DIR / APP_NAME
 SETTINGS_DIR: Path = APP_DATA_DIR / 'Settings'
 LOGS_DIR: Path = APP_DATA_DIR / 'Logs'

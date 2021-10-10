@@ -28,9 +28,9 @@ class Background(QObject):
         self.output_directory = config.BASE_DIR
         self._progress = 0
 
-        self.fs = io.Filesystem.get_filesystem()
+        self.fs = io.Filesystem.get_filesystem()  # pylint: disable=invalid-name
 
-        super(Background, self).__init__()
+        super().__init__()
 
     def checkstop(self):
         if self.stop:
@@ -66,8 +66,8 @@ class Background(QObject):
 
     def reboot_into_storage(self):
         with self.connect_blackbox_board() as board:
-            r: msp.MSP_DATAFLASH_SUMMARY = board.send_command(msp.MSP_DATAFLASH_SUMMARY)
-            logger.info(f'Blackbox used: {r.used_size}/{r.total_size} {round(r.used_size / r.total_size, 1) * 100}%')
+            resp: msp.MSP_DATAFLASH_SUMMARY = board.send_command(msp.MSP_DATAFLASH_SUMMARY)
+            logger.info(f'Blackbox used: {resp.used_size}/{resp.total_size} {round(resp.used_size / resp.total_size, 1) * 100}%')
             board.send_command(msp.MSP_REBOOT_MSD)
 
     def copy_blackbox_files(self):
@@ -120,15 +120,15 @@ class Background(QObject):
         self.checkstop()
         logger.info(f'Connected to {device}')
 
-        with msp.SerialMSP(port=device) as s:
-            yield s
+        with msp.SerialMSP(port=device) as ser:
+            yield ser
 
 
 class MainWindow(Ui_MainWindow, QMainWindow):
     def __init__(self, app: QApplication):
         self.app = app
 
-        super(MainWindow, self).__init__()
+        super().__init__()
 
         self.setupUi(self)
 
@@ -152,11 +152,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             options=QFileDialog.Option.ShowDirsOnly,
             directory=str(config.BASE_DIR)
         )
-        logger.debug('Set output directory: %s', directory)
+        logger.debug(f'Set output directory: {directory}')
         self._background_task.output_directory = Path(directory)
         self.output_folder_edit.setText(directory)
 
-    def closeEvent(self, *args, **kwargs):
+    def closeEvent(self, *args, **kwargs):  # pylint: disable=invalid-name,unused-argument
         """Terminate application if main window closed"""
         self._background_task.stop = True
         logger.info('Waiting for background run to stop')

@@ -43,7 +43,7 @@ class SerialConnection:
             try:
                 self._conn.open()
                 break
-            except Exception as e:
+            except:
                 logger.error(f'Port {self.port} connection exception')
 
             time.sleep(0.5)
@@ -106,8 +106,8 @@ class MSPCommand:
         return cls.code, cls.payload or []
 
     @classmethod
-    def make_response(cls, response: MSPResponse):
-        raise NotImplemented()
+    def make_response(cls, response: MSPResponse):  # pylint: disable=unused-argument
+        return cls()
 
 
 @dataclasses.dataclass
@@ -201,7 +201,7 @@ class SerialMSP(SerialConnection):
     """
 
     def __init__(self, *args, **kwargs):
-        super(SerialMSP, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._msp_read_lock = threading.Lock()
 
@@ -270,16 +270,17 @@ class SerialMSP(SerialConnection):
         except:
             if command.need_response:
                 raise
-            else:
-                logger.warning('Tried to receive serial response but got error, skipping')
+            logger.warning('Tried to receive serial response but got error, skipping')
 
         if command.need_response:
             try:
-                r = command.make_response(response)
-                logger.debug(f'Response: {r}')
-                return r
+                resp = command.make_response(response)
+                logger.debug(f'Response: {resp}')
+                return resp
             except SerialError:
                 raise
-            except:
+            except Exception as exc:
                 logger.exception(f'Failed to build command {command.__name__} response from {response}')
-                raise SerialError('Foo bar :(')
+                raise SerialError('Foo bar :(') from exc
+
+        return None

@@ -62,7 +62,7 @@ class StatusBarHandler(logging.StreamHandler):
     def __init__(self, status_bar: QStatusBar):
         self._status_bar = status_bar
 
-        super(StatusBarHandler, self).__init__()
+        super().__init__()
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
