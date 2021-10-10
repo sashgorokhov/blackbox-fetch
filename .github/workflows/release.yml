@@ -1,0 +1,114 @@
+
+name: Autorelease
+on:
+  workflow_dispatch:
+    branches:
+      - master
+      - dev
+
+
+jobs:
+  build:
+    uses: sashgorokhov/blackbox-fetch/.github/workflows/build.yml@dev
+
+  create_release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: git config
+        run: |
+          git config --global user.name 'Github Action'
+          git config --global user.email 'github-action@users.noreply.github.com'
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - uses: actions/cache@v2
+        with:
+          path: |
+            .venv
+            .cache
+            env
+          key: v2-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            v2-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+            v2-${{ runner.os }}-
+
+      - name: Install dependencies
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_CACHE_DIR: .cache
+        run: |
+          python -m venv env
+          ./env/bin/pip install --cache-dir .cache poetry
+          ./env/bin/poetry install
+          wget -O git-chglog.tar.gz https://github.com/git-chglog/git-chglog/releases/download/v0.15.0/git-chglog_0.15.0_linux_amd64.tar.gz
+          tar -xvzf git-chglog.tar.gz git-chglog
+
+      - name: Bump version
+        id: version
+        run: |
+          branch="$(git rev-parse --abbrev-ref HEAD)"
+          version_before="$(./env/bin/poetry version -s)"
+          tag_before="v$version_before"
+
+          if [ "$branch" == "master" ]; then
+            echo "Bumping patch version"
+            ./env/bin/poetry version patch
+          fi
+
+          if [ "$branch" == "dev" ]; then
+            echo "Bumping minor version"
+            ./env/bin/poetry version minor
+          fi
+
+          version_after="$(./env/bin/poetry version -s)"
+          tag_after="v$version_after"
+
+          echo "::set-output name=version_before::$version_before"
+          echo "::set-output name=tag_before::$tag_before"
+          echo "::set-output name=version_after::$version_after"
+          echo "::set-output name=tag_after::$tag_after"
+
+      - name: git commit
+        run: git commit -am "Auto bump version to ${{ steps.version.outputs.version_after }}"
+
+      - name: git tag
+        run: git tag ${{ steps.version.outputs.tag_after }}
+
+      - name: generate changelog
+        run: |
+          ./git-chglog -o CHANGELOG.md ${{ steps.version.outputs.tag_after }}
+          cat CHANGELOG.md
+
+      - uses: actions/download-artifact@v2
+
+      - name: Prepare artifacts
+        run: |
+          echo "Preparing windows"
+          cp blackbox_fetch_windows_amd64/blackbox-fetch_windows_amd64.exe blackbox-fetch.exe
+          zip blackbox-fetch_${{ steps.version.outputs.version_after }}_windows_amd64.zip blackbox-fetch.exe
+
+          echo "Preparing linux"
+          cp blackbox_fetch_linux_amd64/blackbox-fetch_linux_amd64 blackbox-fetch
+          zip blackbox-fetch_${{ steps.version.outputs.version_after }}_linux_amd64.zip blackbox-fetch
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          tags: true
+          branch: ${{ github.ref }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: CHANGELOG.md
+          prerelease: true
+          files: |
+            blackbox-fetch_${{ steps.version.outputs.version_after }}_windows_amd64.zip
+            blackbox-fetch_${{ steps.version.outputs.version_after }}_linux_amd64.zip
+          name: "blackbox-fetch ${{ steps.version.outputs.version_after }}"
+          tag_name: "${{ steps.version.outputs.tag_after }}"
+          fail_on_unmatched_files: true
