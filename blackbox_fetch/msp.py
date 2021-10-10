@@ -102,7 +102,7 @@ class MSPCommand:
     need_response = False
 
     @classmethod
-    def make_request(cls) -> Tuple[int, Union[list[int], bytearray]]:
+    def make_request(cls) -> Tuple[int, Union[List[int], bytearray]]:
         return cls.code, cls.payload or []
 
     @classmethod
