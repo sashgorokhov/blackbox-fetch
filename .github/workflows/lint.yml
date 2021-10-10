@@ -34,4 +34,4 @@ jobs:
           ./env/bin/poetry install
 
       - name: pylint
-        run: ./env/bin/poetry run pylint
+        run: ./env/bin/poetry run pylint blackbox_fetch
