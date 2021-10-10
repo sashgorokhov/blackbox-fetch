@@ -24,7 +24,7 @@ jobs:
           git config --global user.email 'github-action@users.noreply.github.com'
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: '3.9'
       - uses: actions/cache@v2
         with:
           path: |
