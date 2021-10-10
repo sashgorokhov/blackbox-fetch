@@ -5,17 +5,19 @@ info:
   repository_url: https://github.com/sashgorokhov/blackbox-fetch
 options:
   commits:
-#     filters:
-#       Type:
-#         - feat
-#         - fix
-#         - perf
-#         - refactor
+     filters:
+       Type:
+         - feat
+         - feature
+         - new
+         - fix
+         - refactor
   commit_groups:
      title_maps:
        feat: Features
+       feature: Features
+       new: New stuff
        fix: Bug Fixes
-       perf: Performance Improvements
        refactor: Code Refactoring
   header:
     pattern: "^(\\w*)\\:\\s(.*)$"
