@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -30,10 +30,10 @@ jobs:
           POETRY_CACHE_DIR: .cache
         run: |
           python -m venv env
-          ./env/bin/pip install --cache-dir .cache poetry
-          ./env/bin/poetry install
+          ./env/Scripts/pip install --cache-dir .cache poetry
+          ./env/Scripts/poetry install
 
-          ./env/bin/poetry show
+          ./env/Scripts/poetry show
 
       - name: pylint
-        run: ./env/bin/poetry run pylint --rcfile ./.pylintrc ./blackbox_fetch
+        run: ./env/Scripts/poetry run pylint --rcfile ./.pylintrc ./blackbox_fetch
