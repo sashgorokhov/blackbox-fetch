@@ -205,7 +205,7 @@ class SerialMSP(SerialConnection):
 
         self._msp_read_lock = threading.Lock()
 
-    def _send(self, msp_code: int, payload: Union[list[int], bytearray] = None):
+    def _send(self, msp_code: int, payload: Union[List[int], bytearray] = None):
         payload = payload or []
 
         s_payload = len(payload)
