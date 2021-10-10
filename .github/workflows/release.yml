@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    uses: sashgorokhov/blackbox-fetch/.github/workflows/build.yml@dev
+    uses: sashgorokhov/blackbox-fetch/.github/workflows/build.yml@master
 
   create_release:
     runs-on: ubuntu-latest

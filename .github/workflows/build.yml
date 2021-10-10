@@ -3,11 +3,6 @@ name: build
 on:
   workflow_call:
 
-  pull_request:
-    types: ["opened", "synchronize"]
-    paths-ignore:
-      - "README.md"
-
   push:
     paths-ignore:
       - "README.md"

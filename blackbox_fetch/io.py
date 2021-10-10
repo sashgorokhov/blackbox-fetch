@@ -70,7 +70,8 @@ class FilesystemWindows(Filesystem):
 
     @staticmethod
     def get_blackbox_drive() -> Optional[Path]:
-        import win32api  # pylint: disable=import-outside-toplevel
+        # platform-specific import
+        import win32api  # pylint: disable=import-outside-toplevel,import-error
 
         drives = list(filter(lambda p: p.exists(), (Path(f'{letter}:/') for letter in string.ascii_uppercase)))
         drive_labels: List[Tuple[Path, str]] = [(drive, str(win32api.GetVolumeInformation(str(drive))[0])) for drive in drives]
