@@ -18,9 +18,9 @@ BLACKBOX_FLASH_DRIVE_NAMES = (
 
 def is_blackbox_device(device: str) -> bool:
     try:
-        with msp.SerialMSP(port=device) as s:
-            r: msp.MSP_FC_VARIANT = s.send_command(msp.MSP_FC_VARIANT)
-            logger.debug(f'Successfully connected to MSP device {device}: {r.fc_variant}')
+        with msp.SerialMSP(port=device) as ser:
+            resp: msp.MSP_FC_VARIANT = ser.send_command(msp.MSP_FC_VARIANT)
+            logger.debug(f'Successfully connected to MSP device {device}: {resp.fc_variant}')
             return True
     except:
         logger.debug(f'Considering not a blackbox compatible MSP device {device} because of MSP error or what')
@@ -30,10 +30,12 @@ def is_blackbox_device(device: str) -> bool:
 
 class Filesystem(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def get_msp_device(self) -> Optional[str]: ...
+    def get_msp_device(self) -> Optional[str]:
+        ...
 
     @abc.abstractmethod
-    def get_blackbox_files(self) -> List[Path]: ...
+    def get_blackbox_files(self) -> List[Path]:
+        ...
 
     @classmethod
     def get_filesystem(cls) -> 'Filesystem':
@@ -47,12 +49,12 @@ class FilesystemWindows(Filesystem):
         devices = [comport.device for comport in serial.tools.list_ports.comports()]
 
         if not devices:
-            return
+            return None
 
-        logger.debug('Available devices: %s', devices)
+        logger.debug(f'Available devices: {devices}')
 
         for device in devices:
-            logger.debug('Trying %s', device)
+            logger.debug(f'Trying {device}')
             if is_blackbox_device(device):
                 return device
 
@@ -66,14 +68,16 @@ class FilesystemWindows(Filesystem):
 
         return list(drive.glob('*.bbl'))
 
-    def get_blackbox_drive(self) -> Optional[Path]:
-        import win32api
+    @staticmethod
+    def get_blackbox_drive() -> Optional[Path]:
+        # platform-specific import
+        import win32api  # pylint: disable=import-outside-toplevel,import-error
 
         drives = list(filter(lambda p: p.exists(), (Path(f'{letter}:/') for letter in string.ascii_uppercase)))
         drive_labels: List[Tuple[Path, str]] = [(drive, str(win32api.GetVolumeInformation(str(drive))[0])) for drive in drives]
 
         if not drives:
-            return
+            return None
 
         for drive, label in drive_labels:
             if label in BLACKBOX_FLASH_DRIVE_NAMES:

@@ -1,0 +1,39 @@
+
+name: Lint
+
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+
+jobs:
+  lint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - uses: actions/cache@v2
+        with:
+          path: |
+            .venv
+            .cache
+            env
+          key: v2-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            v2-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+            v2-${{ runner.os }}-
+      - name: Install dependencies
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_CACHE_DIR: .cache
+        run: |
+          python -m venv env
+          ./env/Scripts/pip install --cache-dir .cache poetry
+          ./env/Scripts/poetry install
+
+          ./env/Scripts/poetry show
+
+      - name: pylint
+        run: ./env/Scripts/poetry run pylint --rcfile ./.pylintrc ./blackbox_fetch

@@ -3,11 +3,6 @@ name: build
 on:
   workflow_call:
 
-  pull_request:
-    types: ["opened", "synchronize"]
-    paths-ignore:
-      - "README.md"
-
   push:
     paths-ignore:
       - "README.md"
@@ -46,11 +41,11 @@ jobs:
           }
 
           python -m venv env
-          ./env/Scripts/pip install --cache-dir .cache poetry
+          ./env/Scripts/pip install --cache-dir .cache poetry pywin32
           ./env/Scripts/poetry install
       - name: Build .exe
         run: |
-          ./env/Scripts/poetry run pyinstaller -w -y --clean --log-level WARN -F --name blackbox-fetch --upx-dir .cache/ ./blackbox_fetch/main.py
+          ./env/Scripts/poetry run pyinstaller -w -y --clean --log-level WARN -F --name blackbox-fetch --upx-dir .cache/ --hidden-import win32api ./blackbox_fetch/main.py
           ls dist
           mv dist/blackbox-fetch.exe dist/blackbox-fetch_windows_amd64.exe
       - uses: actions/upload-artifact@v2

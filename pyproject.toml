@@ -13,6 +13,7 @@ pywin32 = {version = "^301", platform = "windows"}
 [tool.poetry.dev-dependencies]
 pyinstaller = "^4.5.1"
 pre-commit = "^2.15.0"
+pylint = "^2.11.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

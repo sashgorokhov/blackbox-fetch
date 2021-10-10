@@ -1,6 +1,7 @@
 import argparse
 import contextlib
 import logging
+import sys
 
 from PyQt6.QtWidgets import QApplication
 
@@ -26,7 +27,7 @@ def ui_entrypoint():
 
 def main():
     parser = argparse.ArgumentParser()
-    args = parser.parse_args()
+    args = parser.parse_args()  # pylint: disable=unused-variable
 
     logs.configure()
 
@@ -34,7 +35,7 @@ def main():
         ui_entrypoint()
     except:
         logger.exception('Error in entrypoint')
-        exit(-1)
+        sys.exit(-1)
 
 
 if __name__ == '__main__':
